@@ -9,7 +9,7 @@ const projectsData: Project[] = [
   {
     title: 'Humming',
     description: `당신이 흥얼거리고 있는 노래가 기억나지 않나요? 허밍을 통해 쉽게 찾아보세요. 바로 노래를 들을 수 있습니다.`,
-    imgSrc: '/static/images/Humming.png',
+    imgSrc: '/static/images/humming.png',
     href: 'https://humming.vercel.app/',
   },
   {
