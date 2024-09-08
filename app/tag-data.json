@@ -1,13 +1,1 @@
-{
-  "css": 1,
-  "js": 4,
-  "react": 6,
-  "npm": 1,
-  "webpack": 1,
-  "fe": 1,
-  "personal": 1,
-  "javascript": 1,
-  "multi-author": 1,
-  "next-js": 1,
-  "feature": 1
-}
+{ "css": 1, "js": 4, "react": 5, "npm": 1, "webpack": 1, "personal": 1, "javascript": 1 }
