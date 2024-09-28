@@ -1,0 +1,115 @@
+---
+title: Next.js에서 클라이언트 사이드 라이브러리 사용하기
+date: '2024-09-28'
+tags: ['fe', 'react', 'next.js']
+draft: false
+summary: Next.js에서 서버 사이드 렌더링의 이점을 유지하면서도 클라이언트 사이드 기능을 원활하게 통합하기.
+---
+
+Next.js 프로젝트에서 브라우저 환경에 의존적인 라이브러리를 통합할 때 (ex. window 객체 사용) 여러 가지 문제가 생길 수 있습니다.
+
+### 문제 상황
+
+처음에는 클라이언트 사이드 라이브러리를 다음과 같이 직접 import 했습니다
+
+```jsx
+import SomeClientLibrary from 'some-client-library'
+```
+
+이 방식은 브라우저에서 라이브러리를 표시할 수 있었지만, 다음과 같은 서버 사이드 렌더링(SSR) 관련 오류가 발생했습니다:
+
+```shell
+⨯ ReferenceError: window is not defined
+```
+
+### 첫 번째 시도: Dynamic Import
+
+첫 번째로는 Next.js의 dynamic import를 사용해보았습니다
+
+```jsx
+const DynamicComponent = dynamic(() => import('@components/ClientComponent'), { ssr: false })
+```
+
+이 방법으로 SSR 관련 오류는 해결되었지만, 새로운 문제가 발생했습니다. 
+컴포넌트를 사용하려고 하면 브라우저에서 다음과 같은 오류가 발생했습니다:
+
+```shell
+Error: Cannot convert undefined or null to object
+```
+
+### 최종 해결 방법
+
+이 문제를 해결하기 위해 다음과 같은 접근 방식을 사용했습니다:
+
+1. 클라이언트 컴포넌트를 별도의 파일로 분리
+2. 'use client' 지시문 사용
+3. props 타입 명확히 정의
+4. 상태 관리 로직 개선
+
+코드로 보자면 이렇습니다.
+
+### 메인 페이지 컴포넌트
+
+```jsx
+'use client'
+
+import dynamic from 'next/dynamic'
+import { useState } from 'react'
+
+const DynamicComponent = dynamic(() => import('@components/ClientComponent'), { ssr: false })
+
+const MainPage = () => {
+  const [content, setContent] = useState('')
+
+  const handleContentChange = (newContent: string) => {
+    setContent(newContent)
+  }
+
+  return (
+    <div>
+      <DynamicComponent
+        data={content}
+        onChange={handleContentChange}
+      />
+    </div>
+  )
+}
+
+export default MainPage
+```
+
+**클라이언트 컴포넌트**
+
+```jsx
+'use client'
+
+import SomeClientLibrary from 'some-client-library'
+
+interface ClientComponentProps {
+  data: string
+  onChange: (data: string) => void
+}
+
+const ClientComponent: React.FC<ClientComponentProps> = ({ data, onChange }) => {
+  return (
+    <SomeClientLibrary
+      data={data}
+      onChange={(event, instance) => {
+        const newData = instance.getData()
+        onChange(newData)
+      }}
+    />
+  )
+}
+
+export default ClientComponent
+```
+
+이러한 접근 방식을 통해 다음과 같은 이점을 얻을 수 있었습니다:
+
+1. SSR 관련 오류 해결
+2. 클라이언트 사이드에서의 정상적인 라이브러리 동작
+3. 타입 안정성 향상
+4. 코드의 모듈화와 재사용성 개선
+
+Next.js에서 클라이언트 사이드 라이브러리를 사용할 때는 SSR과 CSR의 차이를 이해하고, 적절한 방식으로 컴포넌트를 구성하는 것이 중요합니다. 이러한 방법을 통해 서버 사이드 렌더링의 이점을 유지하면서도 클라이언트 사이드 기능을 원활하게 통합할 수 있습니다.

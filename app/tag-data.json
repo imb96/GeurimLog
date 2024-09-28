@@ -1,1 +1,11 @@
-{ "css": 1, "js": 4, "react": 6, "npm": 1, "webpack": 1, "fe": 1, "personal": 1, "javascript": 1 }
+{
+  "fe": 2,
+  "react": 7,
+  "nextjs": 1,
+  "css": 1,
+  "js": 4,
+  "npm": 1,
+  "webpack": 1,
+  "personal": 1,
+  "javascript": 1
+}
