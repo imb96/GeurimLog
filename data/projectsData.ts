@@ -25,6 +25,12 @@ const projectsData: Project[] = [
     href: 'https://humming.vercel.app/',
   },
   {
+    title: 'Footy',
+    description: `잉글랜드 프리미어리그와 챔피언스리그의 팀 순위와 경기 일정을 확인하고 실시간으로 경기 결과를 확인할 수 있는 웹사이트입니다.`,
+    imgSrc: '/static/images/footy.png',
+    href: 'https://footy-schedule.vercel.app/',
+  },
+  {
     title: 'React-Hook-Scroll',
     description:
       'React 프로젝트에서 사용할 수 있는 scroll UI 오픈소스 라이브러리입니다. NPM에 배포되어 있습니다.',
