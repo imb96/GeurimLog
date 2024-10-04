@@ -1,0 +1,115 @@
+---
+title: Typescript Generic
+date: '2024-10-05'
+tags: ['fe', 'ts']
+draft: false
+summary: 타입스크립트의 제네릭에 대해 알아봅니다.
+---
+
+# 타입스크립트 제네릭
+
+### 제네릭이란?
+
+제네릭(Generics)은 타입스크립트에서 함수, 클래스, 인터페이스 등을 작성할 때 여러 타입에 대해 재사용 가능한 컴포넌트를 만들 수 있게 해주는 기능입니다. 제네릭을 사용하면 특정 타입에 종속되지 않고 다양한 타입에 대해 동작하는 컴포넌트를 만들 수 있습니다. 바로 예시코드를 보면서 익숙해져 보겠습니다.
+
+제네릭은 함수에서 인자를 받는 것 처럼 타입 인자를 받을 수 있습니다.
+
+```ts
+//          v---v 인자 식별자
+const eat = (food: FoodType) => {...}
+//                 ^-------^ 인자 타입 지정
+//       v------v 타입 인자 식별자
+type EAT<FoodType> = (food: FoodType) => {...}
+```
+
+타입 인자 식별자에는 제약 조건이 없습니다. 따라서 이렇게 코드를 작성한다면,
+
+```ts
+type Food<T> = {
+  name: 'chicken'
+  price: 20000
+  description: T
+}
+```
+
+다음과 같이 어떤 타입이든 들어올 수 있습니다.
+
+```ts
+type BoolFood = Food<boolean>
+type StringFood = Food<string>
+type VoidFuncFood = Food<() => void>
+```
+
+아래 예시의 identity 함수는 어떤 타입의 인자라도 받아서 그대로 반환합니다. `<T>` 는 타입변수로, 실제 사용시 구체적인 타입으로 대체됩니다.
+
+```ts
+function identity<T>(arg: T): T {
+  return arg
+}
+let output1 = identity<string>('myString') // 타입은 'string'
+let output2 = identity(123) // 'number'
+```
+
+이를 활용한다면 아래 예시의 Box interface는 어떤 타입의 contents든 가질 수 있습니다.
+
+```ts
+interface Box<T> {
+  contents: T
+}
+
+const box1: Box<string> = { contents: 'hello world' }
+const box2: Box<number> = { contents: 42 }
+```
+
+조금 더 제네릭을 잘 활용한다면 다음과 같이 하나의 큐를 만들어서 여러 타입의 큐로 사용할 수도 있습니다.
+
+```ts
+class Queue<T> {
+  private queue: T[] = []
+
+  push(item: T) {
+    this.queue.push(item)
+  }
+
+  pop(): T | undefined {
+    return this.queue.shift()
+  }
+}
+
+const numQueue = new Queue<number>()
+numQueue.push(10)
+console.log(numQueue.pop()) // 10
+
+const strQueue = new Queue<string>()
+strQueue.push('Hello')
+console.log(strQueue.pop()) // 'Hello'
+```
+
+하지만 일반적으로 컴포넌트는 어떤 타입이든 받아도 되는 컴포넌트가 아닐 가능성이 큽니다. 따라서 제네릭 타입에 제약조건을 설정해야 합니다. 그럴때는 extends 키워드를 사용할 수 있습니다.
+
+```ts
+interface LengthWise {
+  length: number
+}
+
+function LoggingIdentity<T extends LengthWise>(arg: T): T {
+  console.log(arg.length) // length 속성이 있다고 확신할 수 있습니다.
+  return arg
+}
+
+LoggingIdentity(3) // error
+LoggingIdentity({ length: 10, value: 20 }) // ok
+```
+
+제네릭 타입의 키워드는 ’T’, ‘U’ 를 주로 일반적으로 자주 사용하는데, 명시적으로 작성해주는게 좋습니다. 또한
+제네릭 타입은 함수 인자와 마찬가지로 하나 이상의 타입을 인자로 받을 수 있습니다.
+
+```ts
+type Message<Title, Content = 'Hello'> = {
+  title: Title
+  content: Content
+}
+
+type ImportantMessage = Log<'Important', 'this message is important'>
+type DefaultMessage = Log<'Hello'>
+```
