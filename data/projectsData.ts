@@ -10,7 +10,7 @@ const projectsData: Project[] = [
     title: 'Pickple',
     description: `같이 농구할 사람을 찾고계신가요? 픽플에서 쉽게 찾아보세요. 잘 맞는 사람들끼리 크루를 결성할수도 있습니다.`,
     imgSrc: '/static/images/pickple.png',
-    href: 'https://pickple.kr/',
+    href: 'https://github.com/Java-and-Script/pickple-front',
   },
   {
     title: 'Nirvana',
