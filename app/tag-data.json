@@ -3,10 +3,10 @@
   "react": 7,
   "nextjs": 1,
   "css": 1,
+  "javascript": 1,
+  "ts": 1,
   "js": 4,
   "npm": 1,
-  "webpack": 1,
-  "ts": 1,
   "personal": 1,
-  "javascript": 1
+  "webpack": 1
 }
