@@ -1,0 +1,260 @@
+---
+title: 자바스크립트 모듈 시스템
+date: '2025-01-18'
+tags: ['javascript']
+draft: false
+summary: 자바스크립트의 모듈 시스템의 발전 과정과 현대 모듈 시스템에 대해 알아봅니다.
+---
+
+# JavaScript의 모듈 시스템
+
+웹 애플리케이션 개발 규모가 커짐에 따라 JavaScript의 효율적인 코드 분리와 재사용성을 위해 **모듈 시스템**이 필수적인 요소가 되었습니다.
+이 글에서는 JavaScript의 모듈 시스템이 어떻게 발전해 왔는지, 각각 모듈 시스템의 특성과 차이점, 그리고 현대 웹 개발에서는 어떤 시스템을 활용하는지 알아보겠습니다.
+
+### 1. 모듈 시스템이란?
+
+모듈 시스템은 코드의 특정 부분을 별도의 파일로 분리하여 작성하고, 이를 필요에 따라 다른 파일에서 가져와서 사용할 수 있는 구조를 의미합니다.
+모듈화를 통해 코드의 가독성, 유지보수성, 재사용성을 크게 향상시킬 수 있습니다.
+
+### 2. JavaScript 모듈 시스템의 발전
+
+#### 2-1. 초기 JavaScript: 스크립트 태그로 파일 로드
+
+초기 JavaScript에서는 별도의 모듈 시스템이 없었습니다.
+여러개의 `<script>` 태그를 사용해서 HTML 파일에 추가하여 모듈처럼 사용했습니다.
+
+```HTML
+<script src="module1.js"></script>
+<script src="module2.js"></script>
+```
+
+**특징**
+
+- 파일 간 의존성 관리가 어렵습니다.
+- 로드 순서가 중요합니다.
+- 글로벌 스코프 오염이 발생할 위험이 있습니다.
+- html 파싱 중 `<script>` 태그를 만나면 파싱이 중단되며, 스크립트를 동기적으로 로드하고 실행한 후에 다시 HTML 파싱을 이어갑니다.
+
+\*\*HTML5에서는 `async`와 `defer` 속성을 추가하여 이 문제를 완화할 수 있습니다.
+
+`async`
+
+- 스크립트를 병렬로 다운로드한 뒤, 다운로드가 완료되면 HTML 파싱을 멈추고 즉시 실행합니다.
+- 실행 순서가 보장되지 않으므로 독립적인 스크립트에 적합합니다.
+
+```html
+<script src="app.js" async></script>
+```
+
+`defer`
+
+- 스크립트를 병렬로 다운로드하면서 HTML 파싱을 계속 진행합니다.
+- HTML 문서의 파싱이 끝난 후 스크립트를 순서대로 실행합니다.
+
+```html
+<script src="app.js" defer></script>
+```
+
+#### 2-2. CommonJS (CJS)
+
+**CommonJS**는 Node.js 환경에서 사용하기 위해 만들어진 모듈 시스템입니다.
+서버사이드 JavaScript에서 모듈화를 지원하며, `require()`와 `module.exports`를 사용해 모듈을 정의합니다.
+
+```JavaScript
+// module.js
+const greet = () => {
+  console.log("greeting!")
+}
+module.exports = greet;
+```
+
+```JavaScript
+// main.js
+const greet = require("./module")
+```
+
+**특징**
+
+- Node.js에서 자주 사용됩니다.
+- 브라우저 환경에서 사용하기 위해서는 번들러가 필요합니다.
+- 동기 방식 로딩으로 느릴 수 있습니다.
+
+#### 2-3. AMD(Asynchronous Module Definition)
+
+**AMD**는 브라우저 환경에서 모듈을 비동기적으로 로드하기 위해 설계되었습니다.
+대표적인 구현체로 **RequireJS**가 있습니다.
+
+```JavaScript
+define(["module1", "module2"], (module1, module2) => {
+  module1.greet();
+  module2.greet();
+})
+```
+
+**특징**
+
+- 비동기 로드로 브라우저에서 효율적입니다.
+- 의존성 관리를 명시적으로 할 수 있습니다.
+- 문법이 복잡하고 가독성이 떨어집니다.
+
+#### 2-4. UMD(Universal Module Definition)
+
+**UMD**는 CommonJS와 AMD를 통합한 방식으로, 브라우저와 Node.js 환경 모두에서 동작하도록 설계되었습니다.
+
+```JavaScript
+(function (root, factory) {
+  if (typeof define === "function" && define.amd) {
+    define([], factory);
+  } else if (typeof module === "object" && module.exports) {
+    module.exports = factory();
+  } else {
+    root.MyModule = factory();
+  }
+})(this, function () {
+  return {
+    greet: function () {
+      console.log("Hello, UMD!");
+    };
+  };
+});
+```
+
+**특징**
+
+- 다양한 환경에서 사용할 수 있습니다.
+- 설정과 코드작성이 복잡합니다.
+
+#### 2-5. ES Modules (ESM)
+
+**ES Modules**는 ECMAScript 표준에 포함된 공식 모듈 시스템으로, 최신 브라우저와 Node.js에서 기본 지원됩니다.
+`import`와 `export` 키워드를 사용합니다.
+
+```JavaScript
+// module.js
+export const greet = () => {
+  console.log("greeting!")
+}
+```
+
+```JavaScript
+// main.js
+import { greet } from "./module.js"
+greet()
+```
+
+**특징**
+
+- 브라우저와 Node.js 모두에서 네이티브 지원.
+- 비동기 및 동적 모듈 로드 지원.
+- Tree Shaking 가능.
+- 구형 브라우저에서는 Babel, Webpack등 추가 설정 필요.
+
+추가적으로, ESModules에서 모듈을 내보내는 방식으로는 named export와 default export 방식이 있습니다.
+
+**named export**
+
+```JavaScript
+// utils.js
+export const add = (a, b) => a + b
+export const sub = (a, b) => a - b
+
+// main.js
+import { add, sub } from './utils.js'
+console.log(add(2,3))
+console.log(sub(2,3))
+```
+
+**특징**
+
+- 한 파일에서 여러 요소를 내보낼 수 있습니다.
+- 가져올 때에는 내보낸 이름으로 가져올 수 있습니다.
+
+**default export**
+
+```JavaScript
+// greet.js
+export default function greet() {
+  console.log("greeting!")
+}
+```
+
+```JavaScript
+// main.js
+import greet from './greet.js'
+greet()
+```
+
+**특징**
+
+- 파일당 하나의 기본 내보내기가 가능합니다.
+- 이름을 변경하여 가져올 수 있습니다.
+
+### 현대 JavaScript에서 모듈 시스템 활용
+
+#### 3.1 React와 같은 SPA 개발
+
+현대 JavaScript 애플리케이션에서는 `<script>` 태그 대신 React, Vue, Angular 등과 같은 프레임워크와 모듈 번들러 (Webpack, Vite 등)를 사용합니다.
+각 모듈은 컴포넌트 단위로 분리되어 유지보수가 용이합니다.
+
+```jsx
+// Button.js
+export default function Button ({ label }) {
+  return <button>{label}</button>
+}
+
+// App.js
+import Button from './Button'
+
+export default function App() {
+  return (
+    <div>
+      <Button label="click"/>
+    </div>
+  )
+}
+```
+
+#### 3.2 모듈 관리
+
+1. 폴더 구조 설계:
+
+- 기능별, 도메인별로 파일을 나누어 구성합니다.
+
+```shell
+src/
+├── components/
+│   ├── Button.js
+│   └── Header.js
+├── pages/
+│   ├── Home.js
+│   └── About.js
+└── utils/
+    └── helpers.js
+```
+
+2. index 파일 활용:
+
+- 디렉토리 내 파일들을 한 곳에 관리하도록 `index.js`를 만들어 import를 단순화 할 수 있습니다.
+
+```js
+// components/index.js
+export { default as Button } from './Button'
+export { default as Header } from './Header'
+
+// App.js
+import { Button, Header } from './components'
+```
+
+3. 코드 스플리팅:
+
+- 필요할 때만 모듈을 로드할 수 있게 동적 import를 활용할 수 있습니다.
+
+```js
+async function loadModule() {
+  const module = await import('./utils/helpers.js')
+  module.doSomething()
+}
+```
+
+JavaScript의 모듈 시스템은 초기의 단순한 스크립트 방식에서 시작하여 CommonJS, AMD, UMD를 거쳐 이제는 ES Modules로 통합되는 방향으로 발전해 왔습니다.
+현대 개발에서는 ES Modules를 기본으로 사용하며, 필요한 경우 번들러와 같은 도구를 활용할 수 있습니다.
