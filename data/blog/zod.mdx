@@ -1,0 +1,629 @@
+---
+title: Zod + React Hook Form으로 폼 유효성 검사 구현하기
+date: '2025-08-05'
+tags: ['zod', 'rhf']
+draft: false
+summary: Zod와 React Hook Form을 활용한 효과적인 폼 유효성 검사 구현 방법을 알아봅니다.
+---
+
+# Zod + React Hook Form으로 폼 유효성 검사 구현하기
+
+최근 프로젝트에서 폼 유효성 검사를 구현하면서 비밀번호 확인, 이메일 형식 체크, 실시간 검증 등 생각보다 복잡한 요구사항들이 많았습니다.
+
+여러 방법을 찾아보다가 Zod와 React Hook Form 조합을 사용하게 되었는데, 정말 효과적인 선택이었습니다.
+이 글에서는 제가 실제로 사용하면서 겪었던 경험들을 공유해보겠습니다.
+
+## Zod와 React Hook Form 소개
+
+### Zod란 무엇인가요?
+
+처음에는 useState로 폼 상태를 관리하고, if문으로 검증을 하고 있었습니다. 그런데 폼이 복잡해질수록 코드가 지저분해지는 문제가 발생했습니다.
+
+Zod는 데이터의 형태와 규칙을 정의하는 스키마 검증 라이브러리입니다. TypeScript 타입도 자동으로 생성해주는 기능이 있어 매우 편리합니다.
+
+실제로 사용해보니 다음과 같은 장점들이 있었습니다:
+
+- 검증 로직을 한 곳에 모아서 관리할 수 있습니다
+- 에러 메시지도 스키마에 함께 정의해서 일관성 있게 관리할 수 있습니다
+- TypeScript 타입을 별도로 정의할 필요가 없습니다
+
+### React Hook Form은 무엇인가요?
+
+React Hook Form은 폼 상태를 효율적으로 관리해주는 라이브러리입니다. 가장 인상적인 부분은 뛰어난 성능입니다.
+
+일반적으로 폼 입력할 때마다 컴포넌트가 리렌더링되는데, React Hook Form은 불필요한 리렌더링을 최소화합니다. controlled/uncontrolled 컴포넌트 개념을 효과적으로 활용하여 이러한 성능 최적화를 달성합니다.
+
+### Zod와 React Hook Form을 함께 사용하는 이유
+
+각각 따로 사용해보니 아쉬운 점들이 있었습니다. Zod만 사용하면 폼 상태 관리가 번거롭고, React Hook Form만 사용하면 검증 로직이 복잡해집니다.
+
+하지만 두 라이브러리를 함께 사용하면 다음과 같은 시너지 효과를 얻을 수 있습니다:
+
+- Zod로 검증 규칙을 명확하게 정의합니다
+- React Hook Form이 해당 규칙으로 폼을 효율적으로 관리합니다
+- TypeScript 타입이 자동으로 동기화됩니다
+
+이전에 useState로 복잡하게 구현했던 경험과 비교하면 정말 큰 차이를 느낄 수 있었습니다.
+
+## 설치 및 설정
+
+### 필요한 패키지
+
+처음 설치할 때는 어떤 패키지가 필요한지 헷갈릴 수 있습니다. 필요한 패키지는 다음 3개입니다:
+
+```bash
+# npm 사용 시
+npm install react-hook-form zod @hookform/resolvers
+
+# yarn 사용 시
+yarn add react-hook-form zod @hookform/resolvers
+```
+
+**각 패키지의 역할:**
+
+- `react-hook-form`: 폼 상태 관리를 담당하는 메인 라이브러리입니다
+- `zod`: 스키마 기반 데이터 검증 라이브러리입니다
+- `@hookform/resolvers`: React Hook Form과 Zod를 연결해주는 어댑터입니다
+
+### TypeScript 설정
+
+TypeScript를 사용하신다면 더 나은 타입 추론을 위해 `tsconfig.json`에 다음 설정을 추가하는 것을 권장합니다:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true
+  }
+}
+```
+
+이 설정이 없으면 타입 추론이 제대로 되지 않아 나중에 문제가 될 수 있습니다.
+
+## 기본 개념 이해하기
+
+### Zod 스키마 정의
+
+처음에 Zod 스키마라는 개념이 생소할 수 있습니다. 간단히 말해 '이런 형태의 데이터만 받겠다'라고 정의하는 것입니다:
+
+```typescript
+import { z } from 'zod'
+
+// 기본 스키마 정의
+const userSchema = z.object({
+  username: z
+    .string()
+    .min(3, '사용자명은 3자 이상이어야 합니다')
+    .max(20, '사용자명은 20자 이하여야 합니다'),
+
+  email: z.string().email('올바른 이메일 형식을 입력해주세요'),
+
+  age: z.number().min(18, '18세 이상이어야 합니다').max(100, '100세 이하여야 합니다'),
+
+  bio: z.string().max(500, '자기소개는 500자 이하여야 합니다').optional(), // 선택적 필드
+
+  agreeToTerms: z.boolean().refine((val) => val === true, '이용약관에 동의해야 합니다'),
+})
+```
+
+### z.infer를 통한 타입 추론
+
+`z.infer`는 Zod의 핵심 기능 중 하나입니다. 이를 통해 Zod 스키마에서 TypeScript 타입을 자동으로 추출할 수 있습니다:
+
+```typescript
+// 스키마 정의
+const userSchema = z.object({
+  username: z.string(),
+  email: z.string().email(),
+  age: z.number(),
+  bio: z.string().optional(),
+})
+
+// z.infer를 사용하여 타입 추론
+type User = z.infer<typeof userSchema>
+
+// 위 코드는 다음과 동일합니다:
+type User = {
+  username: string
+  email: string
+  age: number
+  bio?: string // optional 필드는 ? 타입으로 변환
+}
+```
+
+**z.infer의 장점:**
+
+- 타입을 중복으로 정의할 필요가 없습니다
+- 스키마가 변경되면 타입도 자동으로 업데이트됩니다
+- 타입과 검증 규칙이 항상 동기화되어 일관성을 유지합니다
+
+예전에는 interface를 정의하고 검증 로직을 별도로 만들어야 했는데, 이 두 가지가 동기화되지 않아 버그가 발생하는 경우가 많았습니다.
+
+### React Hook Form의 기본 사용법
+
+React Hook Form은 `useForm` 훅을 통해 폼의 모든 기능을 제공합니다. 처음에는 복잡해 보일 수 있지만, 핵심 개념은 간단합니다:
+
+```typescript
+import { useForm } from 'react-hook-form';
+
+function MyForm() {
+  const {
+    register,        // 입력 필드 등록
+    handleSubmit,    // 폼 제출 핸들러
+    formState: { errors }, // 검증 에러 상태
+    watch,           // 필드 값 감시
+    setValue,        // 필드 값 설정
+    reset            // 폼 초기화
+  } = useForm();
+
+  const onSubmit = (data) => {
+    console.log(data);
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register('username')} />
+      <button type="submit">제출</button>
+    </form>
+  );
+}
+```
+
+### Zod와 React Hook Form 연결하기
+
+`@hookform/resolvers`의 `zodResolver`를 사용하여 두 라이브러리를 쉽게 연결할 수 있습니다:
+
+```typescript
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const schema = z.object({
+  username: z.string().min(1, '사용자명을 입력해주세요')
+});
+
+type FormData = z.infer<typeof schema>;
+
+function MyForm() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm<FormData>({
+    resolver: zodResolver(schema) // Zod 스키마를 검증 로직으로 사용
+  });
+
+  const onSubmit = (data: FormData) => {
+    console.log(data); // 타입 안전한 데이터
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register('username')} />
+      {errors.username && <span>{errors.username.message}</span>}
+      <button type="submit">제출</button>
+    </form>
+  );
+}
+```
+
+## 실전 예제: 회원가입 폼 구현
+
+이론만으로는 이해가 어려울 수 있으니, 실제 회원가입 폼을 만들어보겠습니다.
+
+### 1단계: 스키마 설계
+
+회원가입 폼에 필요한 필드들을 정의해보겠습니다:
+
+- 사용자명
+- 이메일
+- 비밀번호 및 비밀번호 확인
+- 전화번호
+- 약관 동의
+
+```typescript
+import { z } from 'zod'
+
+const registerSchema = z
+  .object({
+    username: z
+      .string()
+      .min(3, '사용자명은 3자 이상이어야 합니다')
+      .max(20, '사용자명은 20자 이하여야 합니다'),
+
+    email: z.string().min(1, '이메일을 입력해주세요').email('올바른 이메일 형식을 입력해주세요'),
+
+    password: z
+      .string()
+      .min(8, '비밀번호는 8자 이상이어야 합니다')
+      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, '영문 대소문자와 숫자를 포함해야 합니다'),
+
+    confirmPassword: z.string().min(1, '비밀번호 확인을 입력해주세요'),
+
+    phoneNumber: z.string().regex(/^\d{3}-\d{4}-\d{4}$/, '올바른 전화번호 형식을 입력해주세요'),
+
+    agreeToTerms: z.boolean().refine((val) => val === true, '이용약관에 동의해야 합니다'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: '비밀번호가 일치하지 않습니다',
+    path: ['confirmPassword'], // 에러가 표시될 필드 지정
+  })
+
+type RegisterFormData = z.infer<typeof registerSchema>
+```
+
+### 2단계: 폼 컴포넌트 구현
+
+React Hook Form을 사용하여 실제 폼을 구현해보겠습니다:
+
+```typescript
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const RegisterForm = () => {
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors, isSubmitting }
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    mode: 'onBlur' // 필드를 벗어날 때 검증
+  });
+
+  const onSubmit = async (data: RegisterFormData) => {
+    // API 호출 로직
+    console.log('등록 성공:', data);
+  };
+
+  // 전화번호 자동 포맷팅
+  const formatPhoneNumber = (value: string) => {
+    const numbers = value.replace(/[^0-9]/g, '');
+    if (numbers.length <= 3) return numbers;
+    if (numbers.length <= 7) return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {/* 사용자명 */}
+      <div>
+        <input
+          {...register('username')}
+          placeholder="사용자명"
+          className="w-full p-2 border rounded"
+        />
+        {errors.username && (
+          <p className="text-red-500 text-sm">{errors.username.message}</p>
+        )}
+      </div>
+
+      {/* 이메일 */}
+      <div>
+        <input
+          {...register('email')}
+          type="email"
+          placeholder="이메일"
+          className="w-full p-2 border rounded"
+        />
+        {errors.email && (
+          <p className="text-red-500 text-sm">{errors.email.message}</p>
+        )}
+      </div>
+
+      {/* 비밀번호 */}
+      <div>
+        <input
+          {...register('password')}
+          type="password"
+          placeholder="비밀번호"
+          className="w-full p-2 border rounded"
+        />
+        {errors.password && (
+          <p className="text-red-500 text-sm">{errors.password.message}</p>
+        )}
+      </div>
+
+      {/* 전화번호 (Controller 사용) */}
+      <div>
+        <Controller
+          name="phoneNumber"
+          control={control}
+          render={({ field }) => (
+            <input
+              {...field}
+              placeholder="010-1234-5678"
+              className="w-full p-2 border rounded"
+              onChange={(e) => {
+                const formatted = formatPhoneNumber(e.target.value);
+                field.onChange(formatted);
+              }}
+              maxLength={13}
+            />
+          )}
+        />
+        {errors.phoneNumber && (
+          <p className="text-red-500 text-sm">{errors.phoneNumber.message}</p>
+        )}
+      </div>
+
+      {/* 약관 동의 */}
+      <div>
+        <label className="flex items-center">
+          <input
+            {...register('agreeToTerms')}
+            type="checkbox"
+            className="mr-2"
+          />
+          이용약관에 동의합니다
+        </label>
+        {errors.agreeToTerms && (
+          <p className="text-red-500 text-sm">{errors.agreeToTerms.message}</p>
+        )}
+      </div>
+
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full bg-blue-500 text-white p-2 rounded disabled:bg-gray-400"
+      >
+        {isSubmitting ? '등록 중...' : '회원가입'}
+      </button>
+    </form>
+  );
+};
+```
+
+## 고급 기능 활용하기
+
+### 커스텀 검증 로직
+
+기본 검증만으로는 부족한 경우가 있습니다. 예를 들어 '시작일이 종료일보다 빨라야 한다'와 같은 복잡한 규칙을 검증할 때는 `refine` 메서드를 사용합니다:
+
+```typescript
+const projectSchema = z
+  .object({
+    startDate: z.string().min(1, '시작일을 선택해주세요'),
+    endDate: z.string().min(1, '종료일을 선택해주세요'),
+    budget: z.number().min(1000, '최소 예산은 1,000원입니다'),
+  })
+  .refine(
+    (data) => {
+      const start = new Date(data.startDate)
+      const end = new Date(data.endDate)
+      return end > start
+    },
+    {
+      message: '종료일은 시작일보다 늦어야 합니다',
+      path: ['endDate'],
+    }
+  )
+```
+
+### 배열 및 중첩 객체 검증
+
+장바구니처럼 여러 항목을 다루는 복잡한 데이터 구조도 검증할 수 있습니다:
+
+```typescript
+const orderSchema = z.object({
+  customerName: z.string().min(1, '고객명을 입력해주세요'),
+
+  items: z
+    .array(
+      z.object({
+        name: z.string().min(1, '상품명을 입력해주세요'),
+        quantity: z.number().min(1, '수량은 1개 이상이어야 합니다'),
+        price: z.number().min(0, '가격은 0원 이상이어야 합니다'),
+      })
+    )
+    .min(1, '최소 하나의 상품을 추가해주세요'),
+
+  shippingAddress: z.object({
+    street: z.string().min(1, '주소를 입력해주세요'),
+    city: z.string().min(1, '도시를 입력해주세요'),
+    zipCode: z.string().regex(/^\d{5}$/, '우편번호는 5자리 숫자여야 합니다'),
+  }),
+})
+```
+
+### 파일 업로드 검증
+
+프로필 사진 업로드와 같은 기능을 구현할 때 유용합니다:
+
+```typescript
+const fileSchema = z.object({
+  title: z.string().min(1, '제목을 입력해주세요'),
+
+  file: z
+    .any()
+    .refine((file) => file instanceof File, '파일을 선택해주세요')
+    .refine((file) => file.size <= 5 * 1024 * 1024, '파일 크기는 5MB 이하여야 합니다')
+    .refine(
+      (file) => ['image/jpeg', 'image/png'].includes(file.type),
+      '이미지 파일만 업로드 가능합니다'
+    ),
+})
+```
+
+## 성능 최적화 팁
+
+### 검증 모드 설정
+
+React Hook Form의 `mode` 옵션을 활용하여 검증 타이밍을 조절할 수 있습니다:
+
+```typescript
+const { register, handleSubmit } = useForm({
+  resolver: zodResolver(schema),
+  mode: 'onBlur', // 필드를 벗어날 때 검증
+  reValidateMode: 'onChange', // 재검증 시점
+  shouldFocusError: true, // 에러 발생 시 포커스 이동
+})
+```
+
+### 조건부 렌더링
+
+특정 필드의 값에 따라 다른 필드를 조건부로 표시할 수 있습니다. 예를 들어 '사업자'를 선택했을 때만 사업자등록번호 입력란을 보여주는 경우:
+
+```typescript
+const accountType = watch('accountType');
+
+return (
+  <form>
+    <select {...register('accountType')}>
+      <option value="personal">개인</option>
+      <option value="business">사업자</option>
+    </select>
+
+    {accountType === 'business' && (
+      <input
+        {...register('businessNumber')}
+        placeholder="사업자등록번호"
+      />
+    )}
+  </form>
+);
+```
+
+### 스키마 캐싱
+
+복잡한 스키마는 컴포넌트 외부에서 정의하여 재생성을 방지하는 것이 중요합니다:
+
+```typescript
+// 컴포넌트 외부에서 정의
+const userSchema = z.object({
+  // 스키마 정의
+})
+
+// 컴포넌트 내부에서 사용
+const MyComponent = () => {
+  const form = useForm({
+    resolver: zodResolver(userSchema), // 매번 재생성되지 않음
+  })
+}
+```
+
+## 실제 프로젝트 적용 사례
+
+최근 프로젝트에서 컨설턴트 등록 폼을 구현했던 경험을 공유해보겠습니다.
+
+### 주요 요구사항
+
+다음과 같은 복잡한 기능들이 필요했습니다:
+
+- 아이디 중복 확인 (서버 API 호출)
+- 비밀번호 일치 확인
+- 프로필 사진 업로드 (용량 제한 포함)
+- 전화번호 자동 포맷팅
+
+### 구현 코드
+
+```typescript
+// 1. 타입 안전한 스키마 정의
+const consultantSchema = z
+  .object({
+    ids: z.string().min(1, '아이디를 입력해주세요'),
+    passwd: z.string().min(1, '비밀번호를 입력해주세요'),
+    passwordConfirm: z.string().min(1, '비밀번호 확인을 입력해주세요'),
+    // ... 기타 필드들
+  })
+  .refine((data) => data.passwd === data.passwordConfirm, {
+    message: '비밀번호가 일치하지 않습니다',
+    path: ['passwordConfirm'],
+  })
+
+// 2. 타입 추론
+type ConsultantFormData = z.infer<typeof consultantSchema>
+
+// 3. 폼 상태 관리
+const {
+  control,
+  handleSubmit,
+  formState: { errors },
+  setError,
+  clearErrors,
+} = useForm<ConsultantFormData>({
+  resolver: zodResolver(consultantSchema),
+  mode: 'onSubmit',
+})
+```
+
+### 아이디 중복 확인 기능
+
+```typescript
+// 중복 확인 로직
+const handleCheckDuplicate = async () => {
+  try {
+    const res = await postConsultantMemberFind(session.accessToken, idValue)
+
+    if (res.code === 1) {
+      setError('ids', {
+        type: 'manual',
+        message: '이미 사용중인 아이디입니다',
+      })
+    } else if (res.code === -1) {
+      clearErrors('ids')
+      setIsIdAvailable(true)
+    }
+  } catch (error) {
+    setError('ids', {
+      type: 'manual',
+      message: '중복 확인 중 오류가 발생했습니다',
+    })
+  }
+}
+
+// 폼 제출 로직
+const onSubmit = async (data: ConsultantFormData) => {
+  if (!isIdAvailable) {
+    setError('ids', {
+      type: 'manual',
+      message: '아이디 중복확인이 필요합니다.',
+    })
+    return
+  }
+
+  try {
+    const formDataToSend = new FormData()
+    Object.keys(data).forEach((key) => {
+      const value = data[key as keyof ConsultantFormData]
+      if (value instanceof File) {
+        formDataToSend.append(key, value)
+      } else if (value !== undefined && value !== null) {
+        formDataToSend.append(key, String(value))
+      }
+    })
+
+    const res = await postCreateConsultant(formDataToSend)
+    // 성공 처리
+  } catch (error) {
+    // 에러 처리
+  }
+}
+```
+
+## 마무리
+
+Zod와 React Hook Form을 처음 사용할 때는 다소 복잡해 보일 수 있습니다. 하지만 실제로 사용해보면 이 조합이 얼마나 강력한지 알 수 있습니다.
+
+### 주요 장점
+
+- **타입 안전성**: 컴파일 타임과 런타임 모두에서 완벽한 타입 검사
+- **코드 품질**: 검증 로직이 중앙집중화되어 유지보수가 용이함
+- **성능 최적화**: 불필요한 리렌더링 최소화
+- **개발자 경험**: 일관된 에러 처리와 명확한 API
+
+### 고려사항
+
+- **학습 곡선**: 처음 사용 시 개념 이해가 필요합니다
+- **초기 설정**: 간단한 폼에는 과도한 설정일 수 있습니다
+- **디버깅**: 에러 추적이 때로는 복잡할 수 있습니다
+
+### 추천 대상
+
+- 복잡한 폼을 자주 다루는 프로젝트
+- TypeScript를 사용하는 프로젝트
+- 폼 검증 로직의 일관성을 원하는 경우
+- 뛰어난 성능이 필요한 경우
+
+처음에는 학습 비용이 있지만, 한 번 익숙해지면 폼 개발의 생산성과 안정성이 크게 향상됩니다. 저도 처음에는 useState만 사용했지만, 지금은 모든 프로젝트에서 Zod와 React Hook Form을 사용하고 있습니다.
+
+React에서 폼을 구현할 예정이시라면, Zod와 React Hook Form을 꼭 한번 사용해보시길 권해드립니다.

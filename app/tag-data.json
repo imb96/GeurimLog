@@ -1,4 +1,6 @@
 {
+  "zod": 1,
+  "rhf": 1,
   "fe": 4,
   "next": 1,
   "middleware": 1,
