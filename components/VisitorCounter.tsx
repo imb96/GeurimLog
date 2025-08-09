@@ -14,6 +14,7 @@ export default function VisitorCounter() {
     today: 0,
     thisMonth: 0,
   })
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const trackVisit = async () => {
@@ -39,6 +40,8 @@ export default function VisitorCounter() {
         setStats(data)
       } catch (error) {
         console.error('Failed to track visit:', error)
+      } finally {
+        setIsLoading(false)
       }
     }
 
@@ -53,19 +56,31 @@ export default function VisitorCounter() {
       <div className="grid grid-cols-3 gap-4">
         <div className="text-center">
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-            {stats.total.toLocaleString()}
+            {isLoading ? (
+              <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent dark:border-blue-400" />
+            ) : (
+              stats.total.toLocaleString()
+            )}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">총 방문자</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-            {stats.thisMonth.toLocaleString()}
+            {isLoading ? (
+              <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-green-600 border-t-transparent dark:border-green-400" />
+            ) : (
+              stats.thisMonth.toLocaleString()
+            )}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">이번 달</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-            {stats.today.toLocaleString()}
+            {isLoading ? (
+              <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent dark:border-purple-400" />
+            ) : (
+              stats.today.toLocaleString()
+            )}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">오늘</div>
         </div>
