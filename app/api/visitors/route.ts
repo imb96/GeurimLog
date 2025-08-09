@@ -48,27 +48,46 @@ export async function POST(request: NextRequest) {
     const sessionId = request.headers.get('x-session-id')
 
     if (sessionId) {
-      // 총 방문자 수 증가
+      // 총 방문자 수 조회 및 증가
+      const { data: totalData } = await supabase
+        .from('total_visitors')
+        .select('total_count')
+        .eq('id', 1)
+        .single()
+
       await supabase
         .from('total_visitors')
         .update({
-          total_count: supabase.raw('total_count + 1'),
+          total_count: (totalData?.total_count || 0) + 1,
           updated_at: new Date().toISOString(),
         })
         .eq('id', 1)
 
-      // 오늘 방문자 수 증가 (upsert)
-      await supabase.from('visitor_stats').upsert(
-        {
+      // 오늘 방문자 수 조회 및 증가
+      const { data: todayData } = await supabase
+        .from('visitor_stats')
+        .select('daily_count')
+        .eq('date', today)
+        .single()
+
+      if (todayData) {
+        // 이미 오늘 데이터가 있으면 업데이트
+        await supabase
+          .from('visitor_stats')
+          .update({
+            daily_count: todayData.daily_count + 1,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('date', today)
+      } else {
+        // 오늘 데이터가 없으면 생성
+        await supabase.from('visitor_stats').insert({
           date: today,
-          daily_count: supabase.raw('daily_count + 1'),
+          daily_count: 1,
+          created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: 'date',
-          ignoreDuplicates: false,
-        }
-      )
+        })
+      }
     }
 
     // 업데이트된 통계 조회 및 반환
