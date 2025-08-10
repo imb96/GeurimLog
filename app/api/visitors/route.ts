@@ -3,8 +3,13 @@ import { supabase } from '@/lib/supabase'
 
 export async function GET() {
   try {
-    const today = new Date().toISOString().split('T')[0]
-    const thisMonth = new Date().toISOString().slice(0, 7)
+    const now = new Date()
+    const today = now.toISOString().split('T')[0]
+    const thisMonth = now.toISOString().slice(0, 7)
+
+    // 다음 달의 첫 날 계산
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    const nextMonthStr = nextMonth.toISOString().split('T')[0]
 
     // 총 방문자 수 조회
     const { data: totalData } = await supabase
@@ -25,7 +30,7 @@ export async function GET() {
       .from('visitor_stats')
       .select('daily_count')
       .gte('date', `${thisMonth}-01`)
-      .lt('date', `${thisMonth}-32`)
+      .lt('date', nextMonthStr)
 
     const thisMonthTotal = monthlyData?.reduce((sum, day) => sum + (day.daily_count || 0), 0) || 0
 
