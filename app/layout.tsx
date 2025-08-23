@@ -12,6 +12,7 @@ import siteMetadata from '@/data/siteMetadata'
 import { ThemeProviders } from './theme-providers'
 import { Metadata } from 'next'
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google'
+import JsonLd from '@/components/JsonLd'
 
 const space_grotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
     url: './',
     siteName: siteMetadata.title,
     images: [siteMetadata.socialBanner],
-    locale: 'en_US',
+    locale: 'ko_KR',
     type: 'website',
   },
   alternates: {
@@ -101,6 +102,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <GoogleTagManager gtmId={'G-NV3XPDCLNV'} />
       <GoogleAnalytics gaId={'G-NV3XPDCLNV'} />
       <body className="bg-white pl-[calc(100vw-100%)] text-black antialiased dark:bg-gray-950 dark:text-white">
+        <JsonLd type="WebSite" />
         <ThemeProviders>
           <Analytics analyticsConfig={siteMetadata.analytics as AnalyticsConfig} />
           <SectionContainer>

@@ -3,10 +3,11 @@ const siteMetadata = {
   title: "Geurim's Blog",
   author: 'Geurim',
   headerTitle: 'Geurim Log',
-  description: 'This is a dev blog of Geurim',
-  language: 'en-us',
+  description:
+    '프론트엔드 개발자 그림의 기술 블로그 - React, Next.js, TypeScript, JavaScript 개발 경험과 인사이트를 공유합니다',
+  language: 'ko-KR',
   theme: 'system', // system, dark or light
-  siteUrl: 'https://tailwind-nextjs-starter-blog.vercel.app',
+  siteUrl: 'https://geurim-log.vercel.app',
   siteRepo: 'https://github.com/imb96/Geurimlog',
   siteLogo: `${process.env.BASE_PATH || ''}/static/images/logo.png`,
   socialBanner: `${process.env.BASE_PATH || ''}/static/images/twitter-card.png`,
@@ -20,7 +21,7 @@ const siteMetadata = {
   linkedin: 'https://www.linkedin.com/in/geurim',
   threads: 'https://www.threads.net',
   instagram: 'https://www.instagram.com',
-  locale: 'en-US',
+  locale: 'ko-KR',
   // set to true if you want a navbar fixed to the top
   stickyNav: false,
   analytics: {

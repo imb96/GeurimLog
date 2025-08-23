@@ -9,6 +9,7 @@ import Image from '@/components/Image'
 import Tag from '@/components/Tag'
 import siteMetadata from '@/data/siteMetadata'
 import ScrollTopAndComment from '@/components/ScrollTopAndComment'
+import JsonLd from '@/components/JsonLd'
 
 const editUrl = (path) => `${siteMetadata.siteRepo}/blob/main/data/${path}`
 const discussUrl = (path) =>
@@ -30,11 +31,33 @@ interface LayoutProps {
 }
 
 export default function PostLayout({ content, authorDetails, next, prev, children }: LayoutProps) {
-  const { filePath, path, slug, date, title, tags } = content
+  const { filePath, path, slug, date, title, tags, summary } = content
   const basePath = path.split('/')[0]
+
+  const structuredData = {
+    headline: title,
+    datePublished: date,
+    dateModified: content.lastmod || date,
+    description: summary || '',
+    image: content.images?.[0] || siteMetadata.socialBanner,
+    url: `${siteMetadata.siteUrl}/${path}`,
+    author: {
+      '@type': 'Person',
+      name: authorDetails[0]?.name || 'Geurim',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: siteMetadata.title,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${siteMetadata.siteUrl}${siteMetadata.siteLogo}`,
+      },
+    },
+  }
 
   return (
     <SectionContainer>
+      <JsonLd type="BlogPosting" data={structuredData} />
       <ScrollTopAndComment />
       <article>
         <div className="xl:divide-y xl:divide-gray-200 xl:dark:divide-gray-700">
